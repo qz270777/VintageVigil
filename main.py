@@ -23,7 +23,7 @@ class MonitoringController:
         self.direct_user_path = direct_user_path
         self.http_client = None
         self.telegram_bots = {}
-        
+
     async def initialize_resources(self, parse_mode=None):
         """
         Initializes the necessary resources for monitoring.
@@ -83,6 +83,7 @@ class MonitoringController:
 
         # 尝试从环境变量获取API URL，如果未设置，则使用默认值
         API_URL = os.getenv('TELEGRAM_API_URL', 'https://api.telegram.org/bot{0}/{1}')
+
         # 将API_URL设置到asyncio_helper的属性中
         asyncio_helper.API_URL = API_URL
 
@@ -97,10 +98,16 @@ class MonitoringController:
 
         for index, token in telegram_bot_tokens.items():
             if token:
-                self.telegram_bots[index] = AsyncTeleBot(
+                bot = AsyncTeleBot(
                     token,
                     parse_mode=parse_mode,
                 )
+                try:
+                    await bot.get_me()  # Initialize the session
+                    self.telegram_bots[index] = bot
+                    logger.info(f"Telegram bot: {index} initialized successfully")
+                except Exception as e:
+                    logger.error(f"Failed to initialize telegram bot: {index}. Error: {e}")
 
     async def close_resources(self):
         """
